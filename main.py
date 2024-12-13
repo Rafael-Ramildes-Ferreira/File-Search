@@ -21,8 +21,9 @@ class FileSearchWorker(threadPoolLib.Worker):
     def run(self) -> None:
         while True:
             task : FileSearchTask = self.boss.dispatch_task()
-            self.boss.add_task([item for item in Path.iterdir(task.dir) if os.path.isdir(item)])
+            self.boss.add_task([FileSearchTask(item) for item in Path.iterdir(task.dir) if os.path.isdir(item)])
             files = [item for item in Path.iterdir(task.dir) if os.path.isfile(item)]
+            pattern = r".py"
             for file in files:
                 if re.search(pattern,str(file)):
                     print(file)

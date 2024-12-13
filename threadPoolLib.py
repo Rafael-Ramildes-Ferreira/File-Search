@@ -22,9 +22,11 @@ class Dispatcher(ABC):
 	tasks : list[Task]
 	workers : list[Worker]
 	semaphore : threading.Semaphore
+	mutex : threading.Lock
 
 	def __init__(self, _tasks : list[Task] = [], n_workers : int = 5) -> None:
 		self.semaphore = threading.Semaphore(0)
+		self.mutex = threading.Lock()
 		self.tasks = _tasks
 		self.semaphore.release(len(self.tasks))
 		self.workers = []
@@ -35,14 +37,26 @@ class Dispatcher(ABC):
 		self.workers.extend([Worker(self) for _ in range(n_workers)])
 
 	def add_task(self, _tasks : list[Task] = []) -> None:
+		if(len(_tasks) == 0):
+			return
+		
+		self.mutex.acquire()
+		
 		self.tasks.extend(_tasks)
-		for _ in _tasks:
-			self.semaphore.release()
+		self.semaphore.release(len(_tasks))
+		
+		self.mutex.release()
 		
 	def start_workers(self) -> None:
 		for worker in self.workers:
 			worker.run()
 
 	def dispatch_task(self) -> Task:
+		self.mutex.acquire()
+		
 		self.semaphore.acquire()
-		return self.tasks.pop(0)
+		task : Task = self.tasks.pop(0)
+		
+		self.mutex.release()
+
+		return task
