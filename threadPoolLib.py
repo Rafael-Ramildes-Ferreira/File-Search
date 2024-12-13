@@ -4,21 +4,26 @@ import threading
 
 # Will be over written, it's to make Dispatcher be defined in the Worker class
 class Dispatcher: pass
+class Task: pass
 
-class Task(ABC):
-    pass
+class Task(ABC):	
+	@abstractmethod
+	def exec(self) -> Task | list[Task]:
+		pass
 
-class Worker(ABC):
-    boss : Dispatcher
+class Worker:
+	boss : Dispatcher
 
-    def __init__(self, _boss : Dispatcher) -> None:
-        self.boss = _boss
+	def __init__(self, _boss : Dispatcher) -> None:
+		self.boss = _boss
 
-    @abstractmethod
-    def run(self, *args, **kwargs) -> any:
-        pass
+	def run(self) -> None:
+		while True:
+			task : Task = self.boss.dispatch_task()
+			new_tasks: Task = task.exec()
+			self.boss.add_task(new_tasks)
 
-class Dispatcher(ABC):
+class Dispatcher:
 	tasks : list[Task]
 	workers : list[Worker]
 	semaphore : threading.Semaphore
@@ -31,12 +36,11 @@ class Dispatcher(ABC):
 		self.semaphore.release(len(self.tasks))
 		self.workers = []
 		self.create_workers(n_workers)
-		
-	@abstractmethod
+	
 	def create_workers(self, n_workers : int):
 		self.workers.extend([Worker(self) for _ in range(n_workers)])
 
-	def add_task(self, _tasks : list[Task] = []) -> None:
+	def add_task(self, _tasks : Task | list[Task] = []) -> None:
 		if(len(_tasks) == 0):
 			return
 		

@@ -9,32 +9,27 @@ import threadPoolLib
 pattern = "*"
 
 class FileSearchDispatcher(threadPoolLib.Dispatcher): pass
+class FileSearchTask(threadPoolLib.Task): pass
 
-@dataclass
 class FileSearchTask(threadPoolLib.Task):
     dir : Path
+    pattern : str
 
+    def __init__(self, _pattern : str, path : Path) -> None:
+        self.dir = path
+        self.pattern = _pattern
 
-class FileSearchWorker(threadPoolLib.Worker):
-    boss : FileSearchDispatcher
+    def exec(self) -> FileSearchTask | list[FileSearchTask]:
+        files = [item for item in Path.iterdir(self.dir) if os.path.isfile(item)]
+        for file in files:
+            if re.search(self.pattern,str(file)):
+                print(file)
 
-    def run(self) -> None:
-        while True:
-            task : FileSearchTask = self.boss.dispatch_task()
-            self.boss.add_task([FileSearchTask(item) for item in Path.iterdir(task.dir) if os.path.isdir(item)])
-            files = [item for item in Path.iterdir(task.dir) if os.path.isfile(item)]
-            pattern = r".py"
-            for file in files:
-                if re.search(pattern,str(file)):
-                    print(file)
+        return [FileSearchTask(self.pattern,item) for item in Path.iterdir(self.dir) if os.path.isdir(item)]
 
-
-class FileSearchDispatcher(threadPoolLib.Dispatcher):
-    def create_workers(self, n_workers : int):
-        self.workers.extend([FileSearchWorker(self) for _ in range(n_workers)])
 
 
 if __name__ == "__main__":
-    dispatcher = FileSearchDispatcher([FileSearchTask(Path("."))])
+    dispatcher = threadPoolLib.Dispatcher([FileSearchTask(r".py",Path("."))])
     dispatcher.start_workers()
     
