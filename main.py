@@ -4,6 +4,7 @@ import inspect
 import os
 import re
 
+from terminalController import Terminal
 import threadPoolLib
 
 
@@ -21,11 +22,12 @@ class FileSearchTask(threadPoolLib.Task):
 		# looks the stack to find a reference to the Worker
 		# a worker method is one layer above in thye stack ([1])
 		# and has an local variable called 'self'
-        worker = inspect.stack()[1][0].f_locals['self']
+        worker : threadPoolLib.Worker = inspect.stack()[1][0].f_locals['self']
         files = [item for item in Path.iterdir(self.dir) if os.path.isfile(item)]
         for file in files:
             if re.search(self.pattern,str(file)):
                 worker.debug_print(file)
+                # Terminal.print(file)
 
         return [FileSearchTask(self.pattern,item) for item in Path.iterdir(self.dir) if os.path.isdir(item)]
 

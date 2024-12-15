@@ -2,6 +2,8 @@ from abc import ABC,abstractmethod
 import threading
 import inspect
 
+from terminalController import Terminal
+
 
 # Will be over written, it's to make Dispatcher be defined in the Worker class
 class Dispatcher: pass
@@ -25,7 +27,7 @@ class Worker(threading.Thread):
 		# which has an local variable called 'self'
 		self.boss = inspect.stack()[2][0].f_locals['self']
 
-		super().__init__(target=self.loop,name="worker_"+str(self.id))
+		super().__init__(target=self.loop,args=[],name="worker_"+str(self.id))
 
 	def loop(self) -> None:
 		while True:
@@ -34,7 +36,7 @@ class Worker(threading.Thread):
 			self.boss.add_task(new_tasks)
 
 	def debug_print(self, *values, **kargs) -> None:
-		print("[" + self.name + "]", *values, **kargs)
+		Terminal.print("[" + self.name + "]", *values, **kargs)
 
 class Dispatcher:
 	tasks : list[Task]
@@ -56,25 +58,16 @@ class Dispatcher:
 	def add_task(self, _tasks : Task | list[Task] = []) -> None:
 		if(len(_tasks) == 0):
 			return
-		
-		self.mutex.acquire()
-		
-		self.tasks.extend(_tasks)
+				
+		self.tasks.extend(_tasks)	# Extend is atomic
 		self.semaphore.release(len(_tasks))
-		
-		self.mutex.release()
+
 		
 	def start_workers(self) -> None:
 		for worker in self.workers:
-			worker.run()
+			worker.start()
 			
 
 	def dispatch_task(self) -> Task:
-		self.mutex.acquire()
-		
 		self.semaphore.acquire()
-		task : Task = self.tasks.pop(0)
-		
-		self.mutex.release()
-
-		return task
+		return self.tasks.pop(0)	# Pop is atomic
