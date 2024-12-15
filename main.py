@@ -1,14 +1,12 @@
 from dataclasses import dataclass
 from pathlib import Path
+import inspect
 import os
 import re
 
 import threadPoolLib
 
 
-pattern = "*"
-
-class FileSearchDispatcher(threadPoolLib.Dispatcher): pass
 class FileSearchTask(threadPoolLib.Task): pass
 
 class FileSearchTask(threadPoolLib.Task):
@@ -20,10 +18,14 @@ class FileSearchTask(threadPoolLib.Task):
         self.pattern = _pattern
 
     def exec(self) -> FileSearchTask | list[FileSearchTask]:
+		# looks the stack to find a reference to the Worker
+		# a worker method is one layer above in thye stack ([1])
+		# and has an local variable called 'self'
+        worker = inspect.stack()[1][0].f_locals['self']
         files = [item for item in Path.iterdir(self.dir) if os.path.isfile(item)]
         for file in files:
             if re.search(self.pattern,str(file)):
-                print(file)
+                worker.debug_print(file)
 
         return [FileSearchTask(self.pattern,item) for item in Path.iterdir(self.dir) if os.path.isdir(item)]
 
