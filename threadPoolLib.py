@@ -32,6 +32,9 @@ class Worker(threading.Thread):
 	def loop(self) -> None:
 		while True:
 			task : Task = self.boss.dispatch_task()
+			if task == None:
+				break	# Let the thread die, it didn't receive a new task
+
 			new_tasks: Task = task.exec()
 			self.boss.add_task(new_tasks)
 
@@ -66,8 +69,14 @@ class Dispatcher:
 	def start_workers(self) -> None:
 		for worker in self.workers:
 			worker.start()
+
+		for worker in self.workers:
+			worker.join()
+		# Terminal.print("Done!!")
 			
 
 	def dispatch_task(self) -> Task:
-		self.semaphore.acquire()
-		return self.tasks.pop(0)	# Pop is atomic
+		if self.semaphore.acquire(timeout=1):
+			return self.tasks.pop(0)	# Pop is atomic
+		
+		return None
