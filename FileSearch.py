@@ -26,14 +26,14 @@ class FileSearchTask(threadPoolLib.Task):
         files = [item for item in Path.iterdir(self.dir) if os.path.isfile(item)]
         for file in files:
             if re.search(self.pattern,str(file)):
-                worker.debug_print(file)
-                # Terminal.print(file)
+                # worker.debug_print(file)
+                Terminal.print(file)
 
         return [FileSearchTask(self.pattern,item) for item in Path.iterdir(self.dir) if os.path.isdir(item)]
 
 
 
 if __name__ == "__main__":
-    dispatcher = threadPoolLib.Dispatcher([FileSearchTask(r".py",Path("."))])
+    dispatcher = threadPoolLib.Dispatcher([FileSearchTask(r"cpython",Path("."))])
     dispatcher.start_workers()
     
