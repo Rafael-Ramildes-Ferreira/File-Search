@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 import inspect
+import sys
 import os
 import re
 
@@ -31,9 +32,47 @@ class FileSearchTask(threadPoolLib.Task):
 
         return [FileSearchTask(self.pattern,item) for item in Path.iterdir(self.dir) if os.path.isdir(item)]
 
+def print_help() -> None:
+    Terminal.print("Usage:")
+    Terminal.print("\tpython[3] FileSearch.py <pattern> [<base directory>]")
+    Terminal.print("Existing flags:")
+    Terminal.print("\t-h --help:\t Display how to use the program")
+
+def read_pattern() -> str:
+    match sys.argv[1]:
+        case "--help" | "-h":
+            Terminal.print("Prints every occurence of a given pattern in evey subdirectory")
+            print_help()
+            exit()
+        case str() if sys.argv[1].startswith("-"):
+            Terminal.print(f"Unknown flag or argument {sys.argv[1]}")
+            print_help()
+            exit()
+        case _:
+            return sys.argv[1]
+        
+def read_base_path() -> Path:
+    return Path(sys.argv[2])
 
 
 if __name__ == "__main__":
-    dispatcher = threadPoolLib.Dispatcher([FileSearchTask(r"cpython",Path("."))])
+    pattern : str
+    path = Path(".")
+
+    match len(sys.argv):
+        case 1:
+            Terminal.print("At least one positional argument is required:")
+            Terminal.print("\tpython[3] FileSearch.py <pattern> [<base directory>]")
+            exit()
+        case 2:
+            pattern = read_pattern()
+        case 3:
+            pattern = read_pattern()
+        case _:
+            Terminal.print("Unexpected number of arguments")
+            path = print_help()
+
+            
+    dispatcher = threadPoolLib.Dispatcher([FileSearchTask(pattern,path)])
     dispatcher.start_workers()
     
