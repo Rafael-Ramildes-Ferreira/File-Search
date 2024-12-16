@@ -26,8 +26,8 @@ class FileSearchTask(threadPoolLib.Task):
         worker : threadPoolLib.Worker = inspect.stack()[1][0].f_locals['self']
         files : list[Path] = self.glob_impl()
         for file in files:
-                worker.debug_print(file)
-                # Terminal.print(file)
+            worker.debug_print(file)
+            # Terminal.print(file)
 
         return [FileSearchTask(self.pattern,item) for item in Path.iterdir(self.dir) if os.path.isdir(item)]
     
