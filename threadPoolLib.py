@@ -59,7 +59,9 @@ class Dispatcher:
 		self.workers.extend([Worker() for _ in range(n_workers)])
 
 	def add_task(self, _tasks : Task | list[Task] = []) -> None:
-		if(len(_tasks) == 0):
+		if isinstance(_tasks,Task):
+			_tasks = [_tasks]
+		elif len(_tasks) == 0:
 			return
 				
 		self.tasks.extend(_tasks)	# Extend is atomic
