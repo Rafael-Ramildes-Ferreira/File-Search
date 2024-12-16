@@ -27,52 +27,63 @@ class FileSearchTask(threadPoolLib.Task):
         files = [item for item in Path.iterdir(self.dir) if os.path.isfile(item)]
         for file in files:
             if re.search(self.pattern,str(file)):
-                # worker.debug_print(file)
-                Terminal.print(file)
+                worker.debug_print(file)
+                # Terminal.print(file)
 
         return [FileSearchTask(self.pattern,item) for item in Path.iterdir(self.dir) if os.path.isdir(item)]
 
-def print_help() -> None:
-    Terminal.print("Usage:")
-    Terminal.print("\tpython[3] FileSearch.py <pattern> [<base directory>]")
-    Terminal.print("Existing flags:")
-    Terminal.print("\t-h --help:\t Display how to use the program")
 
-def read_pattern() -> str:
-    match sys.argv[1]:
-        case "--help" | "-h":
-            Terminal.print("Prints every occurence of a given pattern in evey subdirectory")
-            print_help()
-            exit()
-        case str() if sys.argv[1].startswith("-"):
-            Terminal.print(f"Unknown flag or argument {sys.argv[1]}")
-            print_help()
-            exit()
-        case _:
-            return sys.argv[1]
-        
-def read_base_path() -> Path:
-    return Path(sys.argv[2])
+class FileSearchCLI:
+    @staticmethod
+    def get_inital_task() -> FileSearchTask:
+        pattern : str
+        path = Path(".")
+
+        match len(sys.argv):
+            case 1:
+                Terminal.print("At least one positional argument is required:")
+                Terminal.print("\tpython[3] FileSearch.py <pattern> [<base directory>]")
+                exit()
+            case 2:
+                pattern = FileSearchCLI.read_pattern()
+            case 3:
+                pattern = FileSearchCLI.read_pattern()
+                path = FileSearchCLI.read_base_path()
+            case _:
+                Terminal.print("Unexpected number of arguments")
+                path = FileSearchCLI.print_help()
+
+        return FileSearchTask(pattern,path)
+
+    @staticmethod
+    def print_help() -> None:
+        Terminal.print("Usage:")
+        Terminal.print("\tpython[3] FileSearch.py <pattern> [<base directory>]")
+        Terminal.print("Existing flags:")
+        Terminal.print("\t-h --help:\t Display how to use the program")
+
+    @staticmethod
+    def read_pattern() -> str:
+        match sys.argv[1]:
+            case "--help" | "-h":
+                Terminal.print("Prints every occurence of a given pattern in evey subdirectory")
+                FileSearchCLI.print_help()
+                exit()
+            case str() if sys.argv[1].startswith("-"):
+                Terminal.print(f"Unknown flag or argument {sys.argv[1]}")
+                FileSearchCLI.print_help()
+                exit()
+            case _:
+                return sys.argv[1]
+            
+    @staticmethod
+    def read_base_path() -> Path:
+        return Path(sys.argv[2]).expanduser()
 
 
 if __name__ == "__main__":
-    pattern : str
-    path = Path(".")
-
-    match len(sys.argv):
-        case 1:
-            Terminal.print("At least one positional argument is required:")
-            Terminal.print("\tpython[3] FileSearch.py <pattern> [<base directory>]")
-            exit()
-        case 2:
-            pattern = read_pattern()
-        case 3:
-            pattern = read_pattern()
-        case _:
-            Terminal.print("Unexpected number of arguments")
-            path = print_help()
-
+    task = FileSearchCLI.get_inital_task()
             
-    dispatcher = threadPoolLib.Dispatcher([FileSearchTask(pattern,path)])
+    dispatcher = threadPoolLib.Dispatcher([task])
     dispatcher.start_workers()
     
