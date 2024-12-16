@@ -11,7 +11,7 @@ Weirdly python's output has more lines, but it has no repeted line, as can be se
 
 ```sort test/python_output.txt | uniq -d > test/python_output_repeated_lines.txt```
 
-by typing ctrl + f in the file, vscode find as many instances of the searched pattern than there is lines in the file.
+by typing `ctrl + f` in the file, vscode find as many instances of the searched pattern than there is lines in the file.
 Also, no error is returned from the following line:
 
 ```while read -r line; do   ls -l "$line"; done < test/python_output.txt```

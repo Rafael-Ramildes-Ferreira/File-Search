@@ -69,7 +69,7 @@ class Worker(threading.Thread):
 	def loop(self) -> None:
 		task : Task
 		while task := self.boss.dispatch_task():
-			new_tasks: Task = task.exec()
+			new_tasks: list[Task] = task.exec()
 			self.boss.add_task(new_tasks)
 
 	def debug_print(self, *values, **kargs) -> None:
