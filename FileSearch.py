@@ -24,13 +24,27 @@ class FileSearchTask(threadPoolLib.Task):
 		# a worker method is one layer above in thye stack ([1])
 		# and has an local variable called 'self'
         worker : threadPoolLib.Worker = inspect.stack()[1][0].f_locals['self']
-        files = [item for item in Path.iterdir(self.dir) if os.path.isfile(item)]
+        files : list[Path] = self.glob_impl()
         for file in files:
-            if re.search(self.pattern,str(file)):
                 worker.debug_print(file)
                 # Terminal.print(file)
 
         return [FileSearchTask(self.pattern,item) for item in Path.iterdir(self.dir) if os.path.isdir(item)]
+    
+    def glob_impl(self) -> list[Path]:
+        return list(self.dir.glob(self.pattern))
+    
+    def regex_impl(self) -> list[Path]:
+        all_files = [item for item in Path.iterdir(self.dir) if os.path.isfile(item)]
+        match_files : list[Path] = []
+
+        for file in all_files:
+            if re.search(self.pattern,str(file)):
+                match_files.extend([file])
+
+        return match_files
+
+
 
 
 class FileSearchCLI:
@@ -50,15 +64,16 @@ class FileSearchCLI:
                 pattern = FileSearchCLI.read_pattern()
                 path = FileSearchCLI.read_base_path()
             case _:
-                Terminal.print("Unexpected number of arguments")
+                Terminal.print("Unexpected number of arguments: check if \"\" are missing")
                 path = FileSearchCLI.print_help()
+                exit()
 
         return FileSearchTask(pattern,path)
 
     @staticmethod
     def print_help() -> None:
         Terminal.print("Usage:")
-        Terminal.print("\tpython[3] FileSearch.py <pattern> [<base directory>]")
+        Terminal.print('\tpython[3] FileSearch.py "<pattern>" [<base directory>]')
         Terminal.print("Existing flags:")
         Terminal.print("\t-h --help:\t Display how to use the program")
 
